@@ -44,6 +44,7 @@ void GSM_Init();
 char CheckUser();
 void RegisterConfirm();
 void SendChar(char data);
+void BuildPower();
 typedef enum{
 	GSM_Off = 1,
 	GSM_On,

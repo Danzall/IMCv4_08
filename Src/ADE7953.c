@@ -22,21 +22,23 @@
 
 static void My_I2C_TransferConfig(I2C_HandleTypeDef *hi2c,  uint16_t DevAddress, uint8_t Size, uint32_t Mode, uint32_t Request);
 
-ADE_State adeState = ACCMODE;
+ADE_State adeState = Current;
 ADE_direction adeDir = Idle;
 uint8_t I2C[10];
 uint8_t I2Ct[10];
 int recIndex;
 extern I2C_HandleTypeDef hi2c1;
 char temp1[20];
-char LCD_1[20];
+char LCD_1[40];
 char LCD_2[20];
 int dataValid = 0;
+int volt;
+int current;
 
 extern HAL_StatusTypeDef I2C_Master_ISR_IT(struct __I2C_HandleTypeDef *hi2c, uint32_t ITFlags, uint32_t ITSources);
 
 void ADE_Service(){
-	Debug_Send("ADE service\r\n");
+	//Debug_Send("ADE service\r\n");
 	/*ClearScreenF();
 	LineSelect(0x80);
 	LCD_Print("Start ADE service");*/
@@ -77,26 +79,29 @@ void ADE_Service(){
 
 		Debug_Send(LCD_1);
 		Debug_Send("\r\n");
-		//adeState = Voltage;
-		adeState = Current;
+		adeState = Voltage;
+		//adeState = Current;
 		break;
 	case Voltage:
 		ADE_Receive(0x21F);
 		strcpy(LCD_1,"Active: ");
 		//Debug_Send("Active\r\n");
 		myLongStr(I2C[0],temp1,10,16);
+		volt = I2C[2];
 		/*Debug_Send("1st byte: ");
 		Debug_Send(temp1);
 		Debug_Send("\r\n");*/
 		strcat(LCD_1,temp1);
 		strcat(LCD_1," ");
 		myLongStr(I2C[1],temp1,10,16);
+		volt = volt + (256 * I2C[1]);
 		/*Debug_Send("2nd byte: ");
 		Debug_Send(temp1);
 		Debug_Send("\r\n");*/
 		strcat(LCD_1,temp1);
 		strcat(LCD_1," ");
 		myLongStr(I2C[2],temp1,10,16);
+		volt = volt + (65536 * I2C[2]);
 		/*Debug_Send("3rd byte: ");
 		Debug_Send(temp1);
 		Debug_Send("\r\n");*/
@@ -104,46 +109,46 @@ void ADE_Service(){
 		strcat(LCD_1," ");
 
 		ADE_Receive(0x223);
-		strcpy(LCD_2,"Apparent: ");
+		strcpy(LCD_1,"Apparent: ");
 		//Debug_Send("Apparent\r\n");
 		myLongStr(I2C[0],temp1,10,16);
 		/*Debug_Send("1st byte: ");
 		Debug_Send(temp1);
 		Debug_Send("\r\n");*/
-		strcat(LCD_2,temp1);
-		strcat(LCD_2," ");
+		strcat(LCD_1,temp1);
+		strcat(LCD_1," ");
 		myLongStr(I2C[1],temp1,10,16);
 		/*Debug_Send("2nd byte: ");
 		Debug_Send(temp1);
 		Debug_Send("\r\n");*/
-		strcat(LCD_2,temp1);
-		strcat(LCD_2," ");
+		strcat(LCD_1,temp1);
+		strcat(LCD_1," ");
 		myLongStr(I2C[2],temp1,10,16);
 		/*Debug_Send("3rd byte: ");
 		Debug_Send(temp1);
 		Debug_Send("\r\n");*/
-		strcat(LCD_2,temp1);
-		strcat(LCD_2," ");
+		strcat(LCD_1,temp1);
+		strcat(LCD_1," ");
 
-		ClearScreenF();
+		/*ClearScreenF();
 		LineSelect(0x80);
-		LCD_Print(LCD_1);
+		LCD_Print(LCD_1);*/
 		Debug_Send("Active ");
 		Debug_Send(LCD_1);
 		Debug_Send("\r\n");
 
-		ClearScreen1();
+		/*ClearScreen1();
 		SetLine(One);
 		LCD_String(LCD_1);
 
 		LineSelect(0xC0);
-		LCD_Print(LCD_2);
+		LCD_Print(LCD_2);*/
 		Debug_Send("Apparent ");
 		Debug_Send(LCD_1);
 		Debug_Send("\r\n");
 
-		SetLine(Two);
-		LCD_String(LCD_2);
+		/*SetLine(Two);
+		LCD_String(LCD_2);*/
 
 		/*Debug_Send(LCD_2);
 		Debug_Send("\r\n");*/
@@ -152,73 +157,86 @@ void ADE_Service(){
 		//RelayOn();
 		break;
 	case Current:
-		//ADE_Receive(0x21C);
+		ADE_Receive(0x21C);
 		strcpy(LCD_1,"Voltage: ");
 		//Debug_Send("Voltage\r\n");
-		myLongStr(I2Ct[0],temp1,10,16);
+		myLongStr(I2C[0],temp1,10,16);
+		volt = I2C[2];
 		/*Debug_Send("1st byte: ");
 		Debug_Send(temp1);
 		Debug_Send("\r\n");*/
 		strcat(LCD_1,temp1);
 		strcat(LCD_1," ");
-		myLongStr(I2Ct[1],temp1,10,16);
+		myLongStr(I2C[1],temp1,10,16);
+		volt = volt + (256 * I2C[1]);
 		/*Debug_Send("2nd byte: ");
 		Debug_Send(temp1);
 		Debug_Send("\r\n");*/
 		strcat(LCD_1,temp1);
 		strcat(LCD_1," ");
-		myLongStr(I2Ct[2],temp1,10,16);
+		myLongStr(I2C[2],temp1,10,16);
+		volt = volt + (65536 * I2C[0]);
 		/*Debug_Send("3rd byte: ");
 		Debug_Send(temp1);
 		Debug_Send("\r\n");*/
 		strcat(LCD_1,temp1);
-		strcat(LCD_1," ");
+		strcat(LCD_1,"\r\n");
 
-		//ADE_Receive(0x21A);
+		ADE_Receive(0x21B);
 		strcpy(LCD_2,"Current: ");
+		//strcat(LCD_2,"Current: ");
 		//Debug_Send("Current\r\n");
 		myLongStr(I2C[0],temp1,10,16);
+
 		/*Debug_Send("1st byte: ");
 		Debug_Send(temp1);
 		Debug_Send("\r\n");*/
 		strcat(LCD_2,temp1);
 		strcat(LCD_2," ");
 		myLongStr(I2C[1],temp1,10,16);
+		//
 		/*Debug_Send("2nd byte: ");
 		Debug_Send(temp1);
 		Debug_Send("\r\n");*/
 		strcat(LCD_2,temp1);
 		strcat(LCD_2," ");
+		current = I2C[2];
+		current = current + (256 * I2C[1]);
+		current = current + (65536 * I2C[0]);
 		myLongStr(I2C[2],temp1,10,16);
+		//
 		/*Debug_Send("3rd byte: ");
 		Debug_Send(temp1);
 		Debug_Send("\r\n");*/
 		strcat(LCD_2,temp1);
-		strcat(LCD_2," ");
+		strcat(LCD_2,"\r\n");
 		//Debug_Send("LCD service\r\n");
 
-		if (dataValid == 1){
-		ClearScreenF();
+		//sprintf(LCD_2, "v:%i c %i\r\n",volt, current);
+		//Debug_Send(LCD_2);
+
+		//if (dataValid == 1){
+		/*ClearScreenF();
 		LineSelect(0x80);
-		LCD_Print(LCD_1);
+		LCD_Print(LCD_1);*/
 
 		//ClearScreen1();
 		//SetLine(One);
 		//LCD_String(LCD_1);
 		//Debug_Send("Voltage ");
 
-		Debug_Send(LCD_1);
-		Debug_Send("\r\n");
+		//Debug_Send(LCD_1);
+		//Debug_Send("\r\n");
 
-		LineSelect(0xC0);
-		LCD_Print(LCD_2);
+		/*LineSelect(0xC0);
+		LCD_Print(LCD_2);*/
 
 		//SetLine(Two);
 		//LCD_String(LCD_2);
 		//Debug_Send("Current ");
-		Debug_Send(LCD_2);
-		Debug_Send("\r\n");
-		}
+		//Debug_Send(LCD_2);
+		//Debug_Send("\r\n");
+		//}
 
 		//Debug_Send(LCD_2);
 		//adeState = Voltage;
@@ -241,6 +259,21 @@ void ADE_Service(){
 		adeState = Voltage;
 		break;
 	}
+}
+
+int getVolt(){
+	int temp;
+	volt = volt /30000;
+	return volt;
+}
+
+int getCurrent(){
+	int temp6;
+	if (current > 1200){
+		current = current / 6;
+	}
+	else current = 0;
+	return current;
 }
 
 HAL_StatusTypeDef ADE_Transmit_IT(I2C_HandleTypeDef *hi2c, uint16_t DevAddress, uint8_t *pData, uint16_t Size)
@@ -412,7 +445,7 @@ void ADE_Receive(int addr){
 	//I2C[2] = 0xA0;
 	//HAL_I2C_Master_Transmit(&hi2c1, 0x70, I2C, 3, 10);
 	//HAL_I2C_Master_Receive(&hi2c1, 0x7C, I2C, 2, 10);
-	Debug_Send("Send I2C\r\n");
+	//Debug_Send("Send I2C\r\n");
 	ADE_Rx(0x70, I2C, 3);
 
 	//ADE_TxRx(0x102);

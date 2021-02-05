@@ -536,9 +536,31 @@ static void MX_GPIO_Init(void)
 
 /* USER CODE BEGIN 4 */
 void loop(){
-
+	ADE_Service();
 	GSM_Service();
 	//Debug_Send("Test\r\n");
+	/*int temp3;
+	char temp2[20];
+	char temp[50];
+	temp3 = getVolt();
+	myLongStr(temp3,temp2,10,10);
+	//Debug_Send("V:");
+	strcat (temp, "V:");
+	strcat (temp, temp2);
+	strcat (temp, ",C:");
+	temp3 = getCurrent();
+	myLongStr(temp3,temp2,10,10);
+	strcat (temp, temp2);
+	strcat (temp, "\n:");*/
+
+	/*Debug_Send(temp2);
+	Debug_Send("\r\n");
+	temp3 = getCurrent();
+	Debug_Send("I:");
+	myLongStr(temp3,temp2,10,10);*/
+	//Debug_Send(temp);
+	//Debug_Send("\r\n");
+
 }
 
 /* USER CODE END 4 */

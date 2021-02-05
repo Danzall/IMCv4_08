@@ -34,4 +34,6 @@ void i2cFlags();
 void ADE_TxRx(int addr);
 void TxDone();
 HAL_StatusTypeDef ADE_Transmit_IT(I2C_HandleTypeDef *hi2c, uint16_t DevAddress, uint8_t *pData, uint16_t Size);
+int getVolt();
+int getCurrent();
 #endif /* ADE7953_H_ */

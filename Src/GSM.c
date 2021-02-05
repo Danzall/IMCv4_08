@@ -11,6 +11,8 @@
 //#include "cmsis_os.h"
 #include "string.h"
 #include "GSM.h"
+#include "ADE7953.h"
+#include "myString.h"
 
 uint16_t onTimer = 0;
 
@@ -50,9 +52,13 @@ int tempState = 0;
 int vthTimer = 0;
 int v1 = 0;
 int v2 = 0;
+int gprs = 0;
 char v1s[6];
 char v2s[6];
 char dummy[50];
+extern volt;
+int voltage;
+int current1;
 
 void pec_Update(char* pec, char index)
 {
@@ -96,7 +102,7 @@ void pec_Update(char* pec, char index)
 void GSM_Init(){
 	//gsmState = AutoBaud;
 	Debug_Send("GSM Init\r\n");
-	gsmInfo.GPRSinterval = 120;
+	gsmInfo.GPRSinterval = 300;
 	strcpy(gsmInfo.urlport,"5000");
 	//strcpy(gsmInfo.urlport,"80");
 	strcpy(gsmInfo.url,"escorsocket.ddns.net");
@@ -121,14 +127,25 @@ void GSM_Service(){
 	//sprintf(temp, "GSM state %i\r\n",gsmState);
 	//Debug_Send(temp);
 	char temp[30];
-	//sprintf(temp, "gprs %i state %i\r\n",gsmInfo.GPRStimer, gsmState);
+	int tempI;
+
+	voltage = getVolt();
+	myLongStr(voltage,temp1,10,10);
+	strcat(temp,",");
+	strcat(temp,temp1);
+	current1 = getCurrent();
+	/*myLongStr(current,temp1,10,10);
+	strcat(temp,",");
+	strcat(temp,temp1);*/
+	//sprintf(temp, "gprs %i state %i v:%i c %i\r\n",gsmInfo.GPRStimer, gsmState, voltage, current);
 	//Debug_Send(temp);
 	if (gsmInfo.socket == 1) HAL_GPIO_WritePin(LED5_GPIO_Port, LED5_Pin, GPIO_PIN_RESET);
 	else  HAL_GPIO_WritePin(LED5_GPIO_Port, LED5_Pin, GPIO_PIN_SET);
 	//ClearScreenF();
 	//LineSelect(0x80);
 	//LCD_Print(temp);
-
+	tempI = getVolt();
+	tempI = getCurrent();
 	switch(gsmState){
 	case GSM_Off:
 		Debug_Send("GSM off1\r\n");
@@ -219,9 +236,10 @@ void GSM_Service(){
 	case DataMode:
 
 		//GSM_Send("AT+QIMODE=1\r\n");
-		GSM_Send("AT+QIMODE?\r\n");
+		//GSM_Send("AT+QIMODE?\r\n");
 		//Debug_Send("Build SMS\r\n");
-		//sendSMS("0720631005", "test");
+		BuildPower();
+		sendSMS("0720631005", smsInfo.build);
 
 		gsmState = CallerID;
 		gsmState = 0;
@@ -263,7 +281,7 @@ void GSM_Service(){
 		//buildInfo();
 		break;
 	case SMS_Send:
-
+		smsFlags.send = 1;
 		Debug_Send("Send SMS\r\n");
 		if (CheckUser() == 0){ //if there is no user registered
 			strcpy(smsInfo.recMSISDN, "0720631005");		//return all sms to admin
@@ -383,6 +401,17 @@ void GSM_Service(){
 		if (gsmInfo.registered == 0){
 			strcpy(tempGPRS,"imei:");
 			strcat(tempGPRS,(char*)gsmInfo.imei);
+
+			int temp3;
+			char temp2[20];
+			temp3 = getVolt();
+			myLongStr(voltage,temp2,10,10);
+			strcat(tempGPRS,",v:");
+			strcat(tempGPRS,temp2);
+			temp3 = getCurrent();
+			myLongStr(current1,temp2,10,10);
+			strcat(tempGPRS,",c:");
+			strcat(tempGPRS,temp2);
 		}
 		else {
 			strcpy(tempGPRS,"user:");
@@ -543,7 +572,7 @@ void GSM_Service(){
 		}
 		gsmInfo.GPRStimer++;
 
-		if ((gsmInfo.GPRStimer >= gsmInfo.GPRSinterval)&&(gsmState == 0)){
+		if ((gsmInfo.GPRStimer >= gsmInfo.GPRSinterval)&&(gsmState == 0)&&(smsFlags.send == 0)){
 			gsmInfo.GPRStimer = 0;
 			if (smsFlags.gprsActive == 0) gsmState = GPRS_On;
 			else if (smsFlags.gprsActive == 1)gsmState = SocketOpen;
@@ -558,9 +587,10 @@ void GSM_Service(){
 
 		}
 		smsTimer++;
-		if ((smsTimer >= 3600)&&(gsmState == 0)){
+		if ((smsTimer >= 3600)&&(gsmState == 0)&&(smsFlags.socket == 0)){
 			smsTimer = 0;
 			strcpy(smsInfo.build,"test");
+			BuildPower();
 			gsmState = SMS_Send;
 		}
 		//sprintf (temp,"GSM state after: %d\r\n", gsmState);
@@ -708,7 +738,7 @@ void procData(){		//process line
 	else if(strncmp((char*)procBuff,"+CREG: 0,1",10)==0)gsmState = SMSconfig;
 	else if(strncmp((char*)procBuff,"+CSQ",4)==0)getSignal();
 	//else if(strncmp((char*)procBuff,"+CGSN:",6)==0)getIMEI();
-
+	else if(strncmp((char*)procBuff,"+CMGS:",6)==0)smsFlags.send = 0;
 	else if(strncmp((char*)procBuff,"+CCID:",6)==0)getCCID();
 	else if(strncmp((char*)procBuff,"OK",3)==0)	OK();
 	else if(strncmp((char*)procBuff,"+CGPADDR",8)==0)Context();
@@ -728,10 +758,10 @@ void procData(){		//process line
 	}
 	else if(strncmp((char*)procBuff,"SEND OK",7)==0){	//data sent
 		//gsmInfo.GPRS_Rec = 1;
-		gsmState = SocketClose;
+		//gsmState = SocketClose;
 		HAL_GPIO_TogglePin(LED4_GPIO_Port, LED4_Pin);
 	}
-	else if(strncmp((char*)procBuff,"CLOSED",7)==0){	//socket closed
+	else if(strncmp((char*)procBuff,"CLOSED",7)==0){	//socket closed by remote
 		gsmInfo.socket = 0;
 		gsmTimer = 0;
 		Debug_Send("Socket closed\r\n");
@@ -797,7 +827,7 @@ void sendSMS(char* num, char* msg){
 	//GSM_Send("\"\r\n");
 	//sendData("AT+CMGS=\"0720631005\"\r\n",UART1);
 	strcpy(SMScontent,msg);
-	smsFlags.send = 0;
+	//smsFlags.send = 0;
 }
 
 void Network(){
@@ -1156,6 +1186,26 @@ void buildInfo(){
 	Debug_Send("\r\n");
 	smsFlags.reply = 1;			//generates reply sms
 	//strcpy(smsInfo.recMSISDN,"0720631005");	//debug for sms from rtc
+}
+
+void BuildPower(){
+	/*int temp3;
+	char temp2[20];
+	temp3 = getVolt();
+	myLongStr(voltage,temp2,10,10);
+	strcpy (smsInfo.build, "IMC v4.08\n");
+	strcat (smsInfo.build, "Voltage:");
+	strcat (smsInfo.build, temp2);
+	strcat (smsInfo.build, "\n");
+	temp3 = getCurrent();
+	myLongStr(current,temp2,10,10);
+	strcat (smsInfo.build, "Current:");
+	strcat (smsInfo.build, temp2);
+	strcat (smsInfo.build, "\n");*/
+
+	sprintf(smsInfo.build, "IMC4.08\n v:%i c %i\r\n",voltage, current1);
+
+	Debug_Send(smsInfo.build);
 }
 
 void Context(){	//MIPCALL

@@ -32,7 +32,9 @@ Src/GSM.o: ../Src/GSM.c \
  C:/Users/Jeefo/System_Workbench/workspace/IMCv4_07_1/IMCv4_07_1/Drivers/STM32F0xx_HAL_Driver/Inc/stm32f0xx_hal_tim_ex.h \
  C:/Users/Jeefo/System_Workbench/workspace/IMCv4_07_1/IMCv4_07_1/Drivers/STM32F0xx_HAL_Driver/Inc/stm32f0xx_hal_uart.h \
  C:/Users/Jeefo/System_Workbench/workspace/IMCv4_07_1/IMCv4_07_1/Drivers/STM32F0xx_HAL_Driver/Inc/stm32f0xx_hal_uart_ex.h \
- C:/Users/Jeefo/System_Workbench/workspace/IMCv4_07_1/IMCv4_07_1/Inc/GSM.h
+ C:/Users/Jeefo/System_Workbench/workspace/IMCv4_07_1/IMCv4_07_1/Inc/GSM.h \
+ C:/Users/Jeefo/System_Workbench/workspace/IMCv4_07_1/IMCv4_07_1/Inc/ADE7953.h \
+ C:/Users/Jeefo/System_Workbench/workspace/IMCv4_07_1/IMCv4_07_1/Inc/myString.h
 
 C:/Users/Jeefo/System_Workbench/workspace/IMCv4_07_1/IMCv4_07_1/Inc/main.h:
 
@@ -101,3 +103,7 @@ C:/Users/Jeefo/System_Workbench/workspace/IMCv4_07_1/IMCv4_07_1/Drivers/STM32F0x
 C:/Users/Jeefo/System_Workbench/workspace/IMCv4_07_1/IMCv4_07_1/Drivers/STM32F0xx_HAL_Driver/Inc/stm32f0xx_hal_uart_ex.h:
 
 C:/Users/Jeefo/System_Workbench/workspace/IMCv4_07_1/IMCv4_07_1/Inc/GSM.h:
+
+C:/Users/Jeefo/System_Workbench/workspace/IMCv4_07_1/IMCv4_07_1/Inc/ADE7953.h:
+
+C:/Users/Jeefo/System_Workbench/workspace/IMCv4_07_1/IMCv4_07_1/Inc/myString.h:
