@@ -1659,14 +1659,14 @@ void HAL_UART_IRQHandler(UART_HandleTypeDef *huart)
   uint32_t cr1its     = READ_REG(huart->Instance->CR1);
   uint32_t cr3its;
   uint32_t errorflags;
-  HAL_GPIO_TogglePin(LED3_GPIO_Port, LED3_Pin);
+
   /* If no error occurs */
   errorflags = (isrflags & (uint32_t)(USART_ISR_PE | USART_ISR_FE | USART_ISR_ORE | USART_ISR_NE));
   //errorflags = (isrflags & (uint32_t)USART_ISR_PE);
   //errorflags = RESET;
   if (errorflags == RESET)
   {
-
+	  HAL_GPIO_TogglePin(LED3_GPIO_Port, LED3_Pin);
     /* UART in mode Receiver ---------------------------------------------------*/
     if(((isrflags & USART_ISR_RXNE) != RESET) && ((cr1its & USART_CR1_RXNEIE) != RESET))
     {

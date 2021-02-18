@@ -134,8 +134,10 @@ int main(void)
   MX_TIM1_Init();
   /* USER CODE BEGIN 2 */
   HAL_Delay(500);
-  LCD_Init();
+  //LCD_Init();
+  Debug_Send("Here\r\n");
   GSM_Init();
+  Debug_Send("Here1\r\n");
   //ValveOpen();
   /* USER CODE END 2 */
 

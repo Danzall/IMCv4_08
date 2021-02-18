@@ -103,11 +103,11 @@ void GSM_Init(){
 	//gsmState = AutoBaud;
 	Debug_Send("GSM Init\r\n");
 	gsmInfo.GPRSinterval = 300;
-	strcpy(gsmInfo.urlport,"5000");
+	strcpy(gsmInfo.urlport,"5008");
 	//strcpy(gsmInfo.urlport,"80");
 	strcpy(gsmInfo.url,"escorsocket.ddns.net");
 	strcpy(gsmInfo.url,"196.40.108.169");
-	strcpy(gsmInfo.url,"197.94.242.65");
+	//strcpy(gsmInfo.url,"197.94.242.65");
 	//strcpy(gsmInfo.url,"102.129.99.123");
 	restartTimer = 0;
 	onTimer = 0;
@@ -186,8 +186,13 @@ void GSM_Service(){
 	case Search:
 		//smsFlags.send = 1;	//test sms function
 		//Debug_Send("Search\r\n");
-		GSM_Send("AT+CREG?\r");
-
+		//GSM_Send("AT+CREG?\r");
+		GSM_Send("AT+CREG=1\r");
+		gsmState = GPRS_Search;
+		break;
+	case GPRS_Search:
+		GSM_Send("AT+CGREG=1\r");
+		gsmState = 0;
 		break;
 	case SMSconfig:
 		Debug_Send("testing\r\n");
@@ -235,7 +240,7 @@ void GSM_Service(){
 		break;
 	case DataMode:
 
-		//GSM_Send("AT+QIMODE=1\r\n");
+		//GSM_Send("AT+QIMODE=0\r\n");
 		//GSM_Send("AT+QIMODE?\r\n");
 		//Debug_Send("Build SMS\r\n");
 		BuildPower();
@@ -370,11 +375,15 @@ void GSM_Service(){
 		gsmState = 0;
 		break;
 	case SMS_Del:
-		smsFlags.send = 1;
-		GSM_Send("AT+CMGD=");
-		GSM_Send(smsInfo.index);
+		//smsFlags.send = 1;
+		//GSM_Send("AT+CMGD=");
+		//GSM_Send(smsInfo.index);
+		strcpy(temp,"AT+CMGD=");
+		strcat(temp,smsInfo.index);
+		strcat(temp,"\r\n");
 		//sendData("4",UART1);
-		GSM_Send("\r\n");
+		//GSM_Send("\r\n");
+		GSM_Send(temp);
 		smsFlags.del = 0;
 		gsmState = 0;
 		break;
@@ -572,22 +581,22 @@ void GSM_Service(){
 		}
 		gsmInfo.GPRStimer++;
 
-		if ((gsmInfo.GPRStimer >= gsmInfo.GPRSinterval)&&(gsmState == 0)&&(smsFlags.send == 0)){
+		if ((gsmInfo.GPRStimer >= gsmInfo.GPRSinterval)&&(gsmState == 0)&&(smsFlags.send == 0)&&(smsFlags.signal == 1)){
 			gsmInfo.GPRStimer = 0;
 			if (smsFlags.gprsActive == 0) gsmState = GPRS_On;
 			else if (smsFlags.gprsActive == 1)gsmState = SocketOpen;
 			else if (smsFlags.gprsPending == 1) gsmState = GPRS_Off;		//switch off gsm if previous
 		}
 
-		if (gsmState == 0) gsmInfo.Timeout++;
+		//if (gsmState == 0) gsmInfo.Timeout++;
 		if(gsmInfo.Timeout >= 60){
 			gsmInfo.Timeout = 0;
 			GSM_Init();
 			gsmState = GSM_Off;
 
 		}
-		smsTimer++;
-		if ((smsTimer >= 3600)&&(gsmState == 0)&&(smsFlags.socket == 0)){
+		//smsTimer++;
+		if ((smsTimer >= 3600)&&(gsmState == 0)&&(gsmInfo.socket == 0)&&(smsFlags.signal == 1)){
 			smsTimer = 0;
 			strcpy(smsInfo.build,"test");
 			BuildPower();
@@ -617,7 +626,7 @@ void GSM_Send(char* data){
 	//HAL_UART_Transmit(&huart2, (uint8_t*)data, size, timeout);
 
 	HAL_UART_Transmit_IT(&huart2, data, size);
-	//HAL_UART_Receive_IT(&huart2, (uint8_t *) dummy, 50);
+	HAL_UART_Receive_IT(&huart2, (uint8_t *) dummy, 50);
 }
 
 void Debug_Send(char* data){
@@ -736,6 +745,8 @@ void procData(){		//process line
 	}
 	else if (gsmInfo.GPRS_Rec > 1) gsmInfo.GPRS_Rec--;
 	else if(strncmp((char*)procBuff,"+CREG: 0,1",10)==0)gsmState = SMSconfig;
+	else if(strncmp((char*)procBuff,"+CREG: 1",8)==0)gsmState = SMSconfig;
+	else if(strncmp((char*)procBuff,"+CGREG: 1",9)==0) Debug_Send("GOT GPRS!!!!!!!\r\n");
 	else if(strncmp((char*)procBuff,"+CSQ",4)==0)getSignal();
 	//else if(strncmp((char*)procBuff,"+CGSN:",6)==0)getIMEI();
 	else if(strncmp((char*)procBuff,"+CMGS:",6)==0)smsFlags.send = 0;
@@ -750,8 +761,8 @@ void procData(){		//process line
 		//gsmState = GPRS_SendMode;
 	}
 	else if(strncmp((char*)procBuff,"ALREADY CONNECT",15)==0){
-
-
+		gsmState = SocketClose;
+		gsmInfo.socket = 0;
 	}
 	else if(strncmp((char*)procBuff,"CONNECT FAIL",13)==0){
 		gsmState = GPRS_Off;
@@ -788,7 +799,7 @@ void procData(){		//process line
 		GSM_Init();
 	}
 	else if(strncmp((char*)procBuff,"ERROR",5)==0){
-		gsmState = GSM_Off;
+		//gsmState = GSM_Off;
 		onTimer = 0;
 		smsFlags.config = 0;
 		//restartTimer = 0;

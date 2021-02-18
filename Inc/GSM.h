@@ -50,6 +50,7 @@ typedef enum{
 	GSM_On,
 	GSM_Enable,
 	Search,
+	GPRS_Search,
 	SMSconfig,
 	Operator,
 	Imei,
