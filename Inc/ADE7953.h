@@ -21,6 +21,7 @@ typedef enum{
 typedef enum{
 	Tx = 1,
 	Rx,
+	TxRx,
 	Idle
 } ADE_direction;
 
@@ -31,7 +32,7 @@ uint32_t ADE_Rx(uint16_t DevAddress, uint8_t *pData, uint8_t size);
 void I2C_Timeout();
 void i2cFlags();
 //void ADE_TxRx();
-void ADE_TxRx(int addr);
+void ADE_TxRx(int addr, int dir);
 void TxDone();
 HAL_StatusTypeDef ADE_Transmit_IT(I2C_HandleTypeDef *hi2c, uint16_t DevAddress, uint8_t *pData, uint16_t Size);
 int getVolt();

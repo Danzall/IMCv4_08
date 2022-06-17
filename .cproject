@@ -44,8 +44,8 @@
 									<listOptionValue builtIn="false" value="../Drivers/CMSIS/Device/ST/STM32F0xx/Include" />
 									
 									
-									<listOptionValue builtIn="false" value="../Drivers/CMSIS/Include" />
-								</option>
+									
+								<listOptionValue builtIn="false" value="../Drivers/CMSIS/Include" /></option>
 								<option id="gnu.c.compiler.option.preprocessor.def.symbols.1971989422" name="Defined symbols (-D)" superClass="gnu.c.compiler.option.preprocessor.def.symbols" useByScannerDiscovery="false" valueType="definedSymbols">
 									<listOptionValue builtIn="false" value="USE_HAL_DRIVER" />
 									<listOptionValue builtIn="false" value="STM32F072xB" />
@@ -65,8 +65,8 @@
 									<listOptionValue builtIn="false" value="../Drivers/CMSIS/Device/ST/STM32F0xx/Include" />
 									
 									
-									<listOptionValue builtIn="false" value="../Drivers/CMSIS/Include" />
-								</option>
+									
+								<listOptionValue builtIn="false" value="../Drivers/CMSIS/Include" /></option>
 								<option id="gnu.cpp.compiler.option.preprocessor.def.1353741483" name="Defined symbols (-D)" superClass="gnu.cpp.compiler.option.preprocessor.def" useByScannerDiscovery="false" valueType="definedSymbols">
 									<listOptionValue builtIn="false" value="USE_HAL_DRIVER" />
 									<listOptionValue builtIn="false" value="STM32F072xB" />
@@ -159,8 +159,8 @@
 									<listOptionValue builtIn="false" value="../Drivers/CMSIS/Device/ST/STM32F0xx/Include" />
 									
 									
-									<listOptionValue builtIn="false" value="../Drivers/CMSIS/Include" />
-								</option>
+									
+								<listOptionValue builtIn="false" value="../Drivers/CMSIS/Include" /></option>
 								<option id="gnu.c.compiler.option.preprocessor.def.symbols.1971989422" name="Defined symbols (-D)" superClass="gnu.c.compiler.option.preprocessor.def.symbols" useByScannerDiscovery="false" valueType="definedSymbols">
 									<listOptionValue builtIn="false" value="USE_HAL_DRIVER" />
 									<listOptionValue builtIn="false" value="STM32F072xB" />
@@ -180,8 +180,8 @@
 									<listOptionValue builtIn="false" value="../Drivers/CMSIS/Device/ST/STM32F0xx/Include" />
 									
 									
-									<listOptionValue builtIn="false" value="../Drivers/CMSIS/Include" />
-								</option>
+									
+								<listOptionValue builtIn="false" value="../Drivers/CMSIS/Include" /></option>
 								<option id="gnu.cpp.compiler.option.preprocessor.def.symbols.369154241" name="Defined symbols (-D)" superClass="gnu.cpp.compiler.option.preprocessor.def.symbols" useByScannerDiscovery="false" valueType="definedSymbols">
 									<listOptionValue builtIn="false" value="USE_HAL_DRIVER" />
 									<listOptionValue builtIn="false" value="STM32F072xB" />

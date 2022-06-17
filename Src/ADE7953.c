@@ -23,7 +23,7 @@
 static void My_I2C_TransferConfig(I2C_HandleTypeDef *hi2c,  uint16_t DevAddress, uint8_t Size, uint32_t Mode, uint32_t Request);
 
 ADE_State adeState = Current;
-ADE_direction adeDir = Idle;
+ADE_direction adeDir = Tx;
 uint8_t I2C[10];
 uint8_t I2Ct[10];
 int recIndex;
@@ -157,6 +157,7 @@ void ADE_Service(){
 		//RelayOn();
 		break;
 	case Current:
+		//Debug_Send("current\r\n");
 		ADE_Receive(0x21C);
 		strcpy(LCD_1,"Voltage: ");
 		//Debug_Send("Voltage\r\n");
@@ -181,6 +182,7 @@ void ADE_Service(){
 		Debug_Send("\r\n");*/
 		strcat(LCD_1,temp1);
 		strcat(LCD_1,"\r\n");
+		//Debug_Send(LCD_1);
 
 		ADE_Receive(0x21B);
 		strcpy(LCD_2,"Current: ");
@@ -336,29 +338,42 @@ HAL_StatusTypeDef ADE_Transmit_IT(I2C_HandleTypeDef *hi2c, uint16_t DevAddress, 
   }
 }
 
-void ADE_TxRx(int addr){
+void ADE_TxRx(int addr, int dir){
 
-
+	adeDir = dir;
 	switch(adeDir){
 	case Tx:
+		Debug_Send("TX\r\n");
 		I2C[0] = (addr & 0xFF00) >> 8;
 		I2C[1] = addr & 0xFF;
 		dataValid = 0;
-		//HAL_I2C_Master_Sequential_Transmit_IT(&hi2c1, 0x70, I2C, 2, I2C_RELOAD_MODE);
-		HAL_I2C_Master_Transmit_IT(&hi2c1, 0x70, I2C, 2);
-		//ADE_Transmit_IT(&hi2c1, 0x70, I2C, 2);
 
+		HAL_I2C_Master_Sequential_Transmit_IT(&hi2c1, 0x70, I2C, 2, I2C_RELOAD_MODE);
+		//HAL_Delay(10);
+		//while (2 != HAL_I2C_Master_Sequential_Receive_IT(&hi2c1, 0x70, I2C, 3, I2C_AUTOEND_MODE))
+		//HAL_I2C_Master_Sequential_Receive_IT(&hi2c1, 0x70, I2C, 3, I2C_AUTOEND_MODE);
+
+		//HAL_I2C_Master_Transmit_IT(&hi2c1, 0x70, I2C, 2);
+		//ADE_Transmit_IT(&hi2c1, 0x70, I2C, 2);
+		//adeDir = Rx;
 		break;
 	case Rx:
-		//Debug_Send("TXRX\r\n");
+		Debug_Send("RX\r\n");
 		recIndex = 0;
 		I2Ct[0] = 0x00;
 		I2Ct[1] = 0x00;
 		I2Ct[2] = 0x00;
-		//HAL_I2C_Master_Sequential_Receive_IT(&hi2c1, 0x70, I2C, 3, I2C_AUTOEND_MODE);
-		HAL_I2C_Master_Receive_IT(&hi2c1, 0x70, I2C, 3);
+		HAL_I2C_Master_Sequential_Receive_IT(&hi2c1, 0x70, I2C, 3, I2C_AUTOEND_MODE);
+		//HAL_I2C_Master_Receive_IT(&hi2c1, 0x70, I2C, 3);
 		//HAL_I2C_Master_Receive_IT(&hi2c1, 0x7c, I2C, 3);
-		adeDir = Idle;
+		//adeDir = Idle;
+		adeDir = Tx;
+		break;
+	case TxRx:
+
+		I2C[0] = (addr & 0xFF00) >> 8;
+		I2C[1] = addr & 0xFF;
+		HAL_I2C_Master_Sequential_Transmit_IT(&hi2c1, 0x70, I2C, 2, I2C_RELOAD_MODE);
 
 		break;
 	case Idle:
@@ -370,6 +385,9 @@ void ADE_TxRx(int addr){
 
 void i2cFlags(){
 
+	//ADE_TxRx(0x7c, Rx);
+
+	adeDir = Rx;
 	uint32_t itsources = READ_REG(hi2c1.Instance->ISR);//I2C_FLAG_BUSY I2C_FLAG_AF I2C_FLAG_TXIS I2C_FLAG_RXNE I2C_ISR_TC
 	if ((itsources&I2C_FLAG_BUSY) != I2C_FLAG_BUSY){	//received not busy
 		/*HAL_GPIO_TogglePin(LED4_GPIO_Port, LED4_Pin);
@@ -379,19 +397,20 @@ void i2cFlags(){
 		}*/
 	}
 	if ((itsources&I2C_ISR_TC) == I2C_ISR_TC){	//still busy, transfer complete
-		Debug_Send("RX\r\n");
-		adeDir = Rx;
-		ADE_TxRx(0x109);
+		Debug_Send("RX1\r\n");
+		//adeDir = Rx;
+		//ADE_TxRx(0x109,Rx);
 	}
 
 	if ((itsources&I2C_ISR_TCR) == I2C_ISR_TCR){
 		Debug_Send("Reload\r\n");
 
-		if (adeDir == Tx){
+		//if (adeDir == Tx){
 			//adeDir = Rx;
 			//hi2c1.State = HAL_I2C_STATE_READY;
 			//ADE_TxRx(0x7c);
-		}
+			//ADE_TxRx(0x7c, Rx);
+		//}
 	}
 	if ((itsources&I2C_FLAG_RXNE) == I2C_FLAG_RXNE){
 		//Debug_Send("Recv\r\n");
@@ -433,8 +452,8 @@ void i2cFlags(){
 }
 
 void TxDone(){
-	adeDir = Rx;
-	ADE_TxRx(0x7c);
+	//adeDir = Rx;
+	//ADE_TxRx(0x7c,Rx);
 }
 
 void ADE_Receive(int addr){
@@ -483,7 +502,8 @@ uint32_t ADE_Rx(uint16_t DevAddress, uint8_t *pData, uint8_t size){
     My_I2C_TransferConfig(&hi2c1, DevAddress, hi2c1.XferSize, I2C_AUTOEND_MODE, I2C_GENERATE_START_WRITE);
 
     //while (__HAL_I2C_GET_FLAG(hi2c1, I2C_FLAG_TXIS) == RESET);
-
+    int tick;
+    tick = HAL_GetTick();
     while (hi2c1.XferCount > 0U)
     {
       /* Wait until TXIS flag is set */
@@ -502,26 +522,40 @@ uint32_t ADE_Rx(uint16_t DevAddress, uint8_t *pData, uint8_t size){
           return HAL_TIMEOUT;
         }
       }*/
-    	timeout = HAL_GetTick();
-      while (__HAL_I2C_GET_FLAG(&hi2c1, I2C_FLAG_TXIS) == RESET){
-    	  /*if  (((HAL_GetTick() - timeout) > 4) || (HAL_GetTick() < timeout)){
-			  I2C_Timeout();
-			  return 0;
-		  }*/
-      }
+
     	//I2C_WaitOnTXISFlagUntilTimeout(&hi2c1, 5, 0);
-    	/*timeout = HAL_GetTick();
+    	timeout = HAL_GetTick();
       while (__HAL_I2C_GET_FLAG(&hi2c1, I2C_ISR_TXE) == RESET){		//wait till data buffer is empty
-    	  if  (((HAL_GetTick() - timeout) > 4) || (HAL_GetTick() < timeout)){
+    	  /*if  (((HAL_GetTick() - timeout) > 10) || (HAL_GetTick() < timeout)){
     		  I2C_Timeout();
     		  return 0;
-    	  }
-      }*/
+    	  }*/
+      }
+      /*
+    	if (I2C_WaitOnTXISFlagUntilTimeout(&hi2c1, 50, tick) != HAL_OK)
+		  {
+			if (&hi2c1.ErrorCode == HAL_I2C_ERROR_AF)
+			{
+			  return HAL_ERROR;
+			}
+			else
+			{
+			  return HAL_TIMEOUT;
+			}
+		  }*/
 
       /* Write data to TXDR */
       hi2c1.Instance->TXDR = (*hi2c1.pBuffPtr++);
       hi2c1.XferCount--;
       hi2c1.XferSize--;
+
+      /*timeout = HAL_GetTick();
+	  while (__HAL_I2C_GET_FLAG(&hi2c1, I2C_FLAG_TXIS) == RESET){
+		  if  (((HAL_GetTick() - timeout) > 4) || (HAL_GetTick() < timeout)){
+			  I2C_Timeout();
+			  return 0;
+		  }
+	  }*/
 
 
       /*if ((hi2c1.XferSize == 0U) && (hi2c1.XferCount != 0U))

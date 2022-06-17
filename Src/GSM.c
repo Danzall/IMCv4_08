@@ -59,6 +59,8 @@ char dummy[50];
 extern volt;
 int voltage;
 int current1;
+int gsmTimeout = 0;
+int gsmSend = 0;
 
 void pec_Update(char* pec, char index)
 {
@@ -102,7 +104,7 @@ void pec_Update(char* pec, char index)
 void GSM_Init(){
 	//gsmState = AutoBaud;
 	Debug_Send("GSM Init\r\n");
-	gsmInfo.GPRSinterval = 300;
+	gsmInfo.GPRSinterval = 180;
 	strcpy(gsmInfo.urlport,"5008");
 	//strcpy(gsmInfo.urlport,"80");
 	strcpy(gsmInfo.url,"escorsocket.ddns.net");
@@ -126,7 +128,7 @@ void GSM_Service(){
 	//GSM_Send("AT\r");
 	//sprintf(temp, "GSM state %i\r\n",gsmState);
 	//Debug_Send(temp);
-	char temp[30];
+	char temp[50];
 	int tempI;
 
 	voltage = getVolt();
@@ -137,20 +139,22 @@ void GSM_Service(){
 	/*myLongStr(current,temp1,10,10);
 	strcat(temp,",");
 	strcat(temp,temp1);*/
-	//sprintf(temp, "gprs %i state %i v:%i c %i\r\n",gsmInfo.GPRStimer, gsmState, voltage, current);
+
+	//sprintf(temp, "gprs %i state %i v:%i c %i\r\n",gsmInfo.GPRStimer, gsmState, voltage, current1);
 	//Debug_Send(temp);
 	if (gsmInfo.socket == 1) HAL_GPIO_WritePin(LED5_GPIO_Port, LED5_Pin, GPIO_PIN_RESET);
 	else  HAL_GPIO_WritePin(LED5_GPIO_Port, LED5_Pin, GPIO_PIN_SET);
 	//ClearScreenF();
 	//LineSelect(0x80);
 	//LCD_Print(temp);
+	HAL_GPIO_TogglePin(LED1_GPIO_Port, LED1_Pin);
 	tempI = getVolt();
 	tempI = getCurrent();
 	switch(gsmState){
 	case GSM_Off:
 		Debug_Send("GSM off1\r\n");
 
-		if (onTimer < 4){
+		if (onTimer < 3){
 			HAL_GPIO_WritePin(GSM_Enable_GPIO_Port, GSM_Enable_Pin, GPIO_PIN_RESET);
 			onTimer++;
 		}
@@ -228,7 +232,8 @@ void GSM_Service(){
 		gsmState = GPRS_Attach;
 		break;
 	case GprsContext:
-		GSM_Send("AT+CGDCONT=1,\"IP\",\"INTERNET\"\r\n");
+		//GSM_Send("AT+CGDCONT=1,\"IP\",\"INTERNET\"\r\n");
+		GSM_Send("AT+CGDCONT=1,\"ip\",\"internet\"\r\n");
 		//strcpy(gsmInfo.url,"www.google.com");
 		//strcpy(gsmInfo.urlport,"80");
 		gsmState = DataMode;
@@ -244,7 +249,7 @@ void GSM_Service(){
 		//GSM_Send("AT+QIMODE?\r\n");
 		//Debug_Send("Build SMS\r\n");
 		BuildPower();
-		sendSMS("0720631005", smsInfo.build);
+		//sendSMS("0720631005", smsInfo.build);
 
 		gsmState = CallerID;
 		gsmState = 0;
@@ -580,7 +585,8 @@ void GSM_Service(){
 
 		}
 		gsmInfo.GPRStimer++;
-
+		sprintf(temp, "gprs %i state %i v:%i c %i T:%i\r\n",gsmInfo.GPRStimer, gsmState, smsFlags.send, smsFlags.signal, gsmTimeout);
+		Debug_Send(temp);
 		if ((gsmInfo.GPRStimer >= gsmInfo.GPRSinterval)&&(gsmState == 0)&&(smsFlags.send == 0)&&(smsFlags.signal == 1)){
 			gsmInfo.GPRStimer = 0;
 			if (smsFlags.gprsActive == 0) gsmState = GPRS_On;
@@ -602,6 +608,9 @@ void GSM_Service(){
 			BuildPower();
 			gsmState = SMS_Send;
 		}
+		if ((gsmInfo.GPRStimer >= 30) && (smsFlags.signal== 0)){
+			gsmTimeout =  10;
+		}
 		//sprintf (temp,"GSM state after: %d\r\n", gsmState);
 		//sendData(temp,UART0);
 	//if (errorTimer >= 55){
@@ -615,7 +624,7 @@ void GSM_Service(){
 	//}
 		//buildInfo();
 	//}
-
+		if (gsmSend == 1) gsmTimeout++;
 
 }
 
@@ -626,15 +635,17 @@ void GSM_Send(char* data){
 	//HAL_UART_Transmit(&huart2, (uint8_t*)data, size, timeout);
 
 	HAL_UART_Transmit_IT(&huart2, data, size);
-	HAL_UART_Receive_IT(&huart2, (uint8_t *) dummy, 50);
+	//HAL_UART_Receive_IT(&huart2, (uint8_t *) dummy, 50);
+	gsmTimeout = 0;
+	gsmSend = 1;
 }
 
 void Debug_Send(char* data){
 	int size;
 	int timeout = 5;
 	size = strlen(data);
-	//HAL_UART_Transmit(&huart1, (uint8_t*)data, size, timeout);
-	HAL_UART_Transmit_IT(&huart1, data, size);
+	HAL_UART_Transmit(&huart1, (uint8_t*)data, size, timeout);
+	//HAL_UART_Transmit_IT(&huart1, data, size);
 }
 
 void SendChar(char data){
@@ -658,6 +669,7 @@ void recData(){
 		else gsmState = SMS_Text;
 	}*/
 		if (recBuffPointerWrite != recBuffPointerRead){
+			gsmSend = 0;
 			//if (recBuff[recBuffPointerRead] != 0x0A){
 			procBuff[procBuffpointer] = recBuff[recBuffPointerRead];
 			//HAL_UART_Transmit(&huart1, procBuff[procBuffpointer], 1, 10);
@@ -886,6 +898,7 @@ void getIMEI(){
 	Debug_Send(procBuff);
 	Debug_Send("\r\n");*/
 	strcpy(gsmInfo.imei,procBuff);
+	if (strncmp(gsmInfo.imei, "AT+CGSN", 7)== 0) gsmState = Imei;
 	Debug_Send("IMEI:");
 	Debug_Send(gsmInfo.imei);
 	Debug_Send("\r\n");
@@ -1200,21 +1213,24 @@ void buildInfo(){
 }
 
 void BuildPower(){
-	/*int temp3;
+	int temp3;
 	char temp2[20];
 	temp3 = getVolt();
 	myLongStr(voltage,temp2,10,10);
 	strcpy (smsInfo.build, "IMC v4.08\n");
+	strcat(smsInfo.build,"IMEI: ");
+	strcat(smsInfo.build, gsmInfo.imei);
+	strcat(smsInfo.build,"\n");
 	strcat (smsInfo.build, "Voltage:");
 	strcat (smsInfo.build, temp2);
 	strcat (smsInfo.build, "\n");
 	temp3 = getCurrent();
-	myLongStr(current,temp2,10,10);
+	myLongStr(current1,temp2,10,10);
 	strcat (smsInfo.build, "Current:");
 	strcat (smsInfo.build, temp2);
-	strcat (smsInfo.build, "\n");*/
-
-	sprintf(smsInfo.build, "IMC4.08\n v:%i c %i\r\n",voltage, current1);
+	strcat (smsInfo.build, "\n");
+	//strcpy(gsmInfo.imei,procBuff);
+	//sprintf(smsInfo.build, "IMC4.08\n IMEI:%s v:%i c %i\r\n",gsmInfo.imei, voltage, current1);
 
 	Debug_Send(smsInfo.build);
 }

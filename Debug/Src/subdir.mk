@@ -15,7 +15,7 @@ C_SRCS += \
 ../Src/motor.c \
 ../Src/myString.c \
 ../Src/stm32f0xx_hal_msp.c \
-../Src/stm32f0xx_hal_timebase_TIM.c \
+../Src/stm32f0xx_hal_timebase_tim.c \
 ../Src/stm32f0xx_it.c \
 ../Src/syscalls.c \
 ../Src/system_stm32f0xx.c 
@@ -32,7 +32,7 @@ OBJS += \
 ./Src/motor.o \
 ./Src/myString.o \
 ./Src/stm32f0xx_hal_msp.o \
-./Src/stm32f0xx_hal_timebase_TIM.o \
+./Src/stm32f0xx_hal_timebase_tim.o \
 ./Src/stm32f0xx_it.o \
 ./Src/syscalls.o \
 ./Src/system_stm32f0xx.o 
@@ -49,7 +49,7 @@ C_DEPS += \
 ./Src/motor.d \
 ./Src/myString.d \
 ./Src/stm32f0xx_hal_msp.d \
-./Src/stm32f0xx_hal_timebase_TIM.d \
+./Src/stm32f0xx_hal_timebase_tim.d \
 ./Src/stm32f0xx_it.d \
 ./Src/syscalls.d \
 ./Src/system_stm32f0xx.d 
